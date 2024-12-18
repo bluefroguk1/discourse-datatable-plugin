@@ -1,4 +1,6 @@
 plugins:
   datatable_enabled:
     default: true
-    client: true 
+    client: true
+    description:
+      en: "Enable the DataTables plugin" 

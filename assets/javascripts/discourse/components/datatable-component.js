@@ -1,78 +1,53 @@
 import Component from "@glimmer/component";
 import { action } from "@ember/object";
-import { debounce } from "@ember/runloop";
+import { debounce, schedule } from "@ember/runloop";
 import { tracked } from "@glimmer/tracking";
 import { service } from "@ember/service";
+import $ from "jquery";
+import "datatables";  // Import the registered module
 
 export default class DataTableComponent extends Component {
   @service capabilities;
-
-  // Track loaded state
+  @service site;
   @tracked resourcesLoaded = false;
+  @tracked dataTable = null;
 
-  // Constructor to handle initialization
   constructor() {
     super(...arguments);
-    this.loadResources().then(() => {
-      this.resourcesLoaded = true;
+    schedule('afterRender', this, () => {
       this.initializeDataTables();
     });
   }
 
-  // Modify loadResources to handle script loading more safely
-  async loadResources() {
-    // Skip if already loaded
-    if (window.DataTable) {
-      return;
-    }
-
-    const loadResource = (type, url) => {
-      return new Promise((resolve, reject) => {
-        let elem;
-        if (type === "css") {
-          elem = document.createElement("link");
-          elem.rel = "stylesheet";
-          elem.href = url;
-        } else {
-          elem = document.createElement("script");
-          elem.type = "text/javascript";
-          elem.src = url;
-        }
-        elem.onload = () => resolve();
-        elem.onerror = () => reject(new Error(`Failed to load ${url}`));
-        document.head.appendChild(elem);
-      });
-    };
-
-    const cssURL = "//cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css";
-    const jsURL = "//cdn.datatables.net/2.1.8/js/dataTables.min.js";
-
-    try {
-      await Promise.all([
-        loadResource("css", cssURL),
-        loadResource("script", jsURL)
-      ]);
-    } catch (error) {
-      console.error("Failed to load DataTables resources:", error);
-      throw error;
-    }
-  }
-
   @action
   initializeDataTables() {
-    const tables = this.element.querySelectorAll("table");
+    const element = document.querySelector(".discourse-datatable");
+    if (!element) return;
+
+    const tables = element.querySelectorAll("table");
     if (tables.length > 0) {
       tables.forEach((table) => {
         const options = this.getDataTableOptions(table);
+        
+        try {
+          const dataTable = $(table).DataTable(options);
+          this.dataTable = dataTable;
 
-        // Initialize DataTable
-        const dataTable = $(table).DataTable(options);
-
-        // Add custom filters if enabled
-        if (this.filtersEnabled(table)) {
-          this.addFilters(dataTable);
+          if (this.filtersEnabled(table)) {
+            this.addFilters(dataTable);
+          }
+        } catch (error) {
+          console.error("Failed to initialize DataTable:", error);
         }
       });
+    }
+  }
+
+  willDestroy() {
+    super.willDestroy();
+    if (this.dataTable) {
+      this.dataTable.destroy();
+      this.dataTable = null;
     }
   }
 

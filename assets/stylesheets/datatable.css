@@ -1,10 +1,39 @@
 .discourse-datatable {
-  /* Add any custom styling here */
   margin: 1em 0;
+}
+
+.discourse-datatable table {
+  width: 100% !important;
+  margin-bottom: 1em;
+}
+
+.discourse-datatable .dataTables_wrapper {
+  position: relative;
 }
 
 .discourse-datatable input[data-filter="true"] {
   margin: 0.5em 0;
   padding: 0.25em;
   width: 100%;
+  border: 1px solid var(--primary-low);
+  border-radius: 3px;
+  color: var(--primary);
+  background: var(--secondary);
+}
+
+.discourse-datatable .dataTables_paginate {
+  margin-top: 1em;
+}
+
+.discourse-datatable .dataTables_paginate .paginate_button {
+  padding: 0.5em 1em;
+  margin: 0 0.25em;
+  border: 1px solid var(--primary-low);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.discourse-datatable .dataTables_paginate .paginate_button.current {
+  background: var(--tertiary);
+  color: var(--secondary);
 }

@@ -1,0 +1,5 @@
+en:
+  discourse_datatable:
+    title: "DataTable"
+    settings:
+      datatable_enabled: "Enable DataTables plugin" 
