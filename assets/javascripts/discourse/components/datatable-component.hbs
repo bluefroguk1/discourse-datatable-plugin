@@ -1,0 +1,7 @@
+{{#if this.resourcesLoaded}}
+  <div class="discourse-datatable">
+    {{yield}}
+  </div>
+{{else}}
+  {{loading-spinner size="small"}}
+{{/if}} 

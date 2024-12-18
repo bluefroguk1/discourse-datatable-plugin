@@ -1,1 +1,10 @@
-@import url("//cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css");
+.discourse-datatable {
+  /* Add any custom styling here */
+  margin: 1em 0;
+}
+
+.discourse-datatable input[data-filter="true"] {
+  margin: 0.5em 0;
+  padding: 0.25em;
+  width: 100%;
+}

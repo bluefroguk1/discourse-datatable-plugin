@@ -1,52 +1,45 @@
-import Component from "@ember/component";
+import Component from "@glimmer/component";
 import { action } from "@ember/object";
 import { debounce } from "@ember/runloop";
+import { tracked } from "@glimmer/tracking";
+import { service } from "@ember/service";
 
 export default class DataTableComponent extends Component {
-  // Load DataTables resources only when necessary
-  async didInsertElement() {
-    super.didInsertElement();
+  @service capabilities;
 
-    await this.loadResources();
-    this.initializeDataTables();
-  }
+  // Track loaded state
+  @tracked resourcesLoaded = false;
 
-  willDestroyElement() {
-    super.willDestroyElement();
-
-    // Clean up DataTables instances
-    const tables = this.element.querySelectorAll("table");
-    tables.forEach((table) => {
-      if ($.fn.DataTable.isDataTable(table)) {
-        $(table).DataTable().destroy();
-      }
+  // Constructor to handle initialization
+  constructor() {
+    super(...arguments);
+    this.loadResources().then(() => {
+      this.resourcesLoaded = true;
+      this.initializeDataTables();
     });
   }
 
-  /**
-   * Dynamically load DataTables CSS and JS from the CDN.
-   * @returns {Promise} Resolves when resources are loaded.
-   */
+  // Modify loadResources to handle script loading more safely
   async loadResources() {
+    // Skip if already loaded
+    if (window.DataTable) {
+      return;
+    }
+
     const loadResource = (type, url) => {
       return new Promise((resolve, reject) => {
         let elem;
-        switch (type) {
-          case "css":
-            elem = document.createElement("link");
-            elem.rel = "stylesheet";
-            elem.href = url;
-            break;
-          case "script":
-            elem = document.createElement("script");
-            elem.type = "text/javascript";
-            elem.src = url;
-            break;
-          default:
-            return reject(new Error("Invalid resource type"));
+        if (type === "css") {
+          elem = document.createElement("link");
+          elem.rel = "stylesheet";
+          elem.href = url;
+        } else {
+          elem = document.createElement("script");
+          elem.type = "text/javascript";
+          elem.src = url;
         }
         elem.onload = () => resolve();
-        elem.onerror = () => reject(new Error(`Failed to load resource: ${url}`));
+        elem.onerror = () => reject(new Error(`Failed to load ${url}`));
         document.head.appendChild(elem);
       });
     };
@@ -54,12 +47,18 @@ export default class DataTableComponent extends Component {
     const cssURL = "//cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css";
     const jsURL = "//cdn.datatables.net/2.1.8/js/dataTables.min.js";
 
-    await Promise.all([loadResource("css", cssURL), loadResource("script", jsURL)]);
+    try {
+      await Promise.all([
+        loadResource("css", cssURL),
+        loadResource("script", jsURL)
+      ]);
+    } catch (error) {
+      console.error("Failed to load DataTables resources:", error);
+      throw error;
+    }
   }
 
-  /**
-   * Initialize DataTables for all tables in the component.
-   */
+  @action
   initializeDataTables() {
     const tables = this.element.querySelectorAll("table");
     if (tables.length > 0) {
@@ -106,10 +105,7 @@ export default class DataTableComponent extends Component {
     return table.dataset.filters === "true";
   }
 
-  /**
-   * Add custom filter inputs for each column in the DataTable.
-   * @param {Object} dataTable - DataTables API instance.
-   */
+  @action
   addFilters(dataTable) {
     const api = dataTable.api();
     api.columns().eq(0).each((index) => {
